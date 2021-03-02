@@ -1,37 +1,44 @@
 package com.kmeans.points;
 
-public class Point {
-	private int x;
-	private int y;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.WritableComparable;
+
+public class Point implements WritableComparable<Point> {
+	private IntWritable x;
+	private IntWritable y;
 
 	public Point() {
-		this(0, 0);
+		this(new IntWritable(0), new IntWritable(0));
 	}
 
-	public Point(int x, int y) {
+	public Point(IntWritable x, IntWritable y) {
 		setX(x);
 		setY(y);
 	}
 
-	public int getX() {
+	public IntWritable getX() {
 		return x;
 	}
 
-	public void setX(int x) {
+	public void setX(IntWritable x) {
 		this.x = x;
 	}
 
-	public int getY() {
+	public IntWritable getY() {
 		return y;
 	}
 
-	public void setY(int y) {
+	public void setY(IntWritable y) {
 		this.y = y;
 	}
 
 	@Override
 	public String toString() {
-		return "(" + this.getX() + "," + this.getY() + ")";
+		return "{" + x.get() + "," + y.get() + "}";
 	}
 
 	@Override
@@ -44,6 +51,28 @@ public class Point {
 
 	@Override
 	public int hashCode() {
-		return 17 * x + y;
+		int ix = x.get();
+		int iy = y.get();
+		return 17 * ix + iy;
+	}
+
+	@Override
+	public void write(DataOutput out) throws IOException {
+		out.writeInt(x.get());
+		out.writeInt(y.get());
+	}
+
+	@Override
+	public void readFields(DataInput in) throws IOException {
+		int ix = in.readInt();
+		int iy = in.readInt();
+		x = new IntWritable(ix);
+		y =new IntWritable(iy);
+	}
+
+	@Override
+	public int compareTo(Point o) {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 }

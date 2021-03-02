@@ -2,11 +2,11 @@ package com.kmeans.distance;
 
 import com.kmeans.points.Point;
 
-public class EuclideanDistance implements Distance{
+public class EuclideanDistance implements Distance {
 
 	@Override
 	public double calculate(Point p1, Point p2) {
-		return Math.sqrt(
-				(p1.getX() - p2.getX()) * (p1.getX() - p2.getX()) + (p1.getY() - p2.getY()) * (p1.getY() - p2.getY()));
+		return Math.sqrt((p1.getX().get() - p2.getX().get()) * (p1.getX().get() - p2.getX().get())
+				+ (p1.getY().get() - p2.getY().get()) * (p1.getY().get() - p2.getY().get()));
 	}
 }
