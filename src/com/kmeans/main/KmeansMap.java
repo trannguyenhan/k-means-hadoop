@@ -12,24 +12,25 @@ import org.apache.hadoop.mapreduce.Mapper;
 
 import com.kmeans.distance.Distance;
 import com.kmeans.distance.EuclideanDistance;
-import com.kmeans.points.Point;
+import com.kmeans.points.PointWritable;
 
-public class KmeansMap extends Mapper<Point, Point, Point, Point> {
-	private static List<Point> listCenter = new ArrayList<>();
-	
-	/* Method setup, we will get k centers from sequence file cen.seq
-	 * */
+public class KmeansMap extends Mapper<PointWritable, PointWritable, PointWritable, PointWritable> {
+	private static List<PointWritable> listCenter = new ArrayList<>();
+
+	/*
+	 * Method setup, we will get k centers from sequence file cen.seq
+	 */
 	@SuppressWarnings("resource")
 	@Override
-	protected void setup(Mapper<Point, Point, Point, Point>.Context context) throws IOException, InterruptedException {
+	protected void setup(Mapper<PointWritable, PointWritable, PointWritable, PointWritable>.Context context) throws IOException, InterruptedException {
 		Configuration conf = context.getConfiguration();
 		Path centers = new Path(conf.get("pathCenter"));
 		
 		SequenceFile.Reader reader = null;
-		reader = new SequenceFile.Reader(conf, Reader.file(centers), Reader.bufferSize(4096));
+		reader = new SequenceFile.Reader(conf, Reader.file(centers));
 		
-		Point key = new Point();
-		Point value = new Point();
+		PointWritable key = new PointWritable();
+		PointWritable value = new PointWritable();
 		while(reader.next(key, value)) {
 			listCenter.add(key);
 		}		
@@ -38,16 +39,17 @@ public class KmeansMap extends Mapper<Point, Point, Point, Point> {
 	}
 
 	@Override
-	protected void map(Point key, Point value, Mapper<Point, Point, Point, Point>.Context context)
+	protected void map(PointWritable key, PointWritable value,
+			Mapper<PointWritable, PointWritable, PointWritable, PointWritable>.Context context)
 			throws IOException, InterruptedException {
 		System.out.print("number of center : " + listCenter.size() + " => ");
 		System.out.print("mapper : ");
 		
-		Point nearest = null;
+		PointWritable nearest = null;
 		Distance distance = new EuclideanDistance();
 		double minDistance = Double.MAX_VALUE;
 		
-		for(Point c : listCenter) {
+		for(PointWritable c : listCenter) {
 			double tmpDistance = distance.calculate(c, value);
 			if(tmpDistance < minDistance) {
 				minDistance = tmpDistance;
@@ -57,5 +59,6 @@ public class KmeansMap extends Mapper<Point, Point, Point, Point> {
 		context.write(nearest, value);
 		
 		System.out.print("(center)" + nearest + " | (point)" + value + "\n");
+
 	}
 }

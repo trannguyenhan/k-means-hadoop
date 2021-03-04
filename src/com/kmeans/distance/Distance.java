@@ -1,7 +1,7 @@
 package com.kmeans.distance;
 
-import com.kmeans.points.Point;
+import com.kmeans.points.PointWritable;
 
 public interface Distance {
-	double calculate(Point p1, Point p2);
+	double calculate(PointWritable p1, PointWritable p2);
 }

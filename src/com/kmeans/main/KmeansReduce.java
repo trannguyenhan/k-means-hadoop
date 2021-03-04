@@ -13,79 +13,86 @@ import org.apache.hadoop.mapreduce.Reducer;
 
 import com.kmeans.distance.Distance;
 import com.kmeans.distance.EuclideanDistance;
-import com.kmeans.points.Point;
+import com.kmeans.points.PointWritable;
 
-public class KmeansReduce extends Reducer<Point, Point, Point, Point>{
-	private static List<Point> newListCenter = new ArrayList<>();
-	
+public class KmeansReduce extends Reducer<PointWritable, PointWritable, PointWritable, PointWritable> {
+	private static List<PointWritable> newListCenter = new ArrayList<>();
+
 	@Override
-	protected void reduce(Point key, Iterable<Point> values, Reducer<Point, Point, Point, Point>.Context context)
+	protected void reduce(PointWritable key, Iterable<PointWritable> values,
+			Reducer<PointWritable, PointWritable, PointWritable, PointWritable>.Context context)
 			throws IOException, InterruptedException {
 		System.out.println("reducer running...");
-		
-		List<Point> list = new ArrayList<>();
-		for(Point p : values) {
+
+		List<PointWritable> list = new ArrayList<>();
+		for (PointWritable p : values) {
 			list.add(p);
 		}
-		
-		Point newCenter = createNewCenter(list);
+
+		PointWritable newCenter = createNewCenter(list);
 		newListCenter.add(newCenter);
-		
-		for(Point p : list) {
+
+		for (PointWritable p : list) {
 			context.write(newCenter, p);
+			
+			System.out.print("reducer : " + "(center)" + newCenter + " | (point)" + p + "\n");
 		}
+
 	}
-	
+
 	@Override
-	protected void cleanup(Reducer<Point, Point, Point, Point>.Context context)
+	protected void cleanup(Reducer<PointWritable, PointWritable, PointWritable, PointWritable>.Context context)
 			throws IOException, InterruptedException {
 		Configuration conf = context.getConfiguration();
 		String pathCenter = conf.get("pathCenter");
-		
+
 		SequenceFile.Writer writer = null;
-		writer = SequenceFile.createWriter(conf, Writer.file(new Path(pathCenter)), 
-		        Writer.keyClass(Point.class), Writer.valueClass(Point.class));
-		
-		for(Point c : newListCenter) {
-			writer.append(c, new Point(new IntWritable(0), new IntWritable(0)));
+		writer = SequenceFile.createWriter(conf, Writer.file(new Path(pathCenter)), Writer.keyClass(PointWritable.class),
+				Writer.valueClass(PointWritable.class));
+
+		for (PointWritable c : newListCenter) {
+			writer.append(c, new PointWritable(new IntWritable(0), new IntWritable(0)));
 		}
-		
+
 		writer.close();
+		
+		System.out.println("END___");
 	}
-	
-	/* Create new center from list point
-	 * */
-	public Point createNewCenter(List<Point> list) {
+
+	/*
+	 * Create new center from list point
+	 */
+	public PointWritable createNewCenter(List<PointWritable> list) {
 		Distance distance = new EuclideanDistance();
-		
-		Point avg = avgPoint(list);
-		Point nearest = null;
+
+		PointWritable avg = avgPoint(list);
+		PointWritable nearest = null;
 		double minDistance = Double.MAX_VALUE;
-		
-		for(Point p : list) {
+
+		for (PointWritable p : list) {
 			double tmpDistance = distance.calculate(p, avg);
-			if(tmpDistance < minDistance) {
+			if (tmpDistance < minDistance) {
 				minDistance = tmpDistance;
 				nearest = p;
 			}
 		}
-		
+
 		return nearest;
 	}
-	
-	public Point avgPoint(List<Point> list) {
+
+	public PointWritable avgPoint(List<PointWritable> list) {
 		int numberOfPoint = list.size();
 		int x = 0;
 		int y = 0;
-		
-		for(Point p : list) {
+
+		for (PointWritable p : list) {
 			x += p.getX().get();
 			y += p.getY().get();
 		}
-		
+
 		x = x / numberOfPoint;
 		y = y / numberOfPoint;
-		
-		return new Point(new IntWritable(x), new IntWritable(y));
+
+		return new PointWritable(new IntWritable(x), new IntWritable(y));
 	}
 }
