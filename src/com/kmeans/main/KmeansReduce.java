@@ -32,6 +32,7 @@ public class KmeansReduce extends Reducer<PointWritable, PointWritable, PointWri
 
 		for (PointWritable p : list) {
 			context.write(newCenter, p);
+			System.out.println("reducer : " + newCenter + " " + p);
 		}
 
 		System.out.println("reducer close...");
