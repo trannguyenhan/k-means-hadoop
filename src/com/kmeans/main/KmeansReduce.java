@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.SequenceFile;
@@ -35,7 +36,7 @@ public class KmeansReduce extends Reducer<PointWritable, PointWritable, PointWri
 		for (PointWritable p : list) {
 			context.write(newCenter, p);
 			
-			System.out.print("reducer : " + "(center)" + newCenter + " | (point)" + p + "\n");
+			System.out.println("reducer : " + newCenter + " / " + p);
 		}
 
 	}
@@ -46,12 +47,18 @@ public class KmeansReduce extends Reducer<PointWritable, PointWritable, PointWri
 		Configuration conf = context.getConfiguration();
 		String pathCenter = conf.get("pathCenter");
 
+		FileSystem fs = FileSystem.get(conf); // delete file output when it exists
+		if (fs.exists(new Path(pathCenter))) {
+			fs.delete(new Path(pathCenter), true);
+		}
+		
 		SequenceFile.Writer writer = null;
 		writer = SequenceFile.createWriter(conf, Writer.file(new Path(pathCenter)), Writer.keyClass(PointWritable.class),
 				Writer.valueClass(PointWritable.class));
 
 		for (PointWritable c : newListCenter) {
-			writer.append(c, new PointWritable(new IntWritable(0), new IntWritable(0)));
+			writer.append(c, new PointWritable());
+			System.out.println("center : " + c);
 		}
 
 		writer.close();

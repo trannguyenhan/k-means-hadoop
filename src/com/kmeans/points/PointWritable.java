@@ -5,20 +5,33 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Objects;
 
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.WritableComparable;
 
 public class PointWritable implements WritableComparable<PointWritable> {
 	private IntWritable x;
 	private IntWritable y;
+	private DoubleWritable distanceForCentroid;
 
 	public PointWritable() {
-		this(new IntWritable(0), new IntWritable(0));
+		this(0, 0);
 	}
 
 	public PointWritable(IntWritable x, IntWritable y) {
-		setX(x);
-		setY(y);
+		this(x.get(), y.get());
+	}
+
+	public PointWritable(int x, int y) {
+		setX(new IntWritable(x));
+		setY(new IntWritable(y));
+
+		double distance = calcDistanceForCentroid(x, y);
+		distanceForCentroid = new DoubleWritable(distance);
+	}
+
+	public double calcDistanceForCentroid(int x, int y) {
+		return Math.sqrt(x * x + y * y);
 	}
 
 	public IntWritable getX() {
@@ -37,29 +50,12 @@ public class PointWritable implements WritableComparable<PointWritable> {
 		this.y = y;
 	}
 
-	@Override
-	public String toString() {
-		return "{" + x.get() + "," + y.get() + "}";
+	public DoubleWritable getDistanceForCentroid() {
+		return distanceForCentroid;
 	}
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-		
-        PointWritable pw = (PointWritable) obj;
-		return Objects.equals(x, pw.getX()) && Objects.equals(y, pw.getY());
-	}
-
-	@Override
-	public int hashCode() {
-		return Objects.hash(x, y);
-	}
-
-	@Override
-	public void write(DataOutput out) throws IOException {
-		x.write(out);
-		y.write(out);
+	public void setDistanceForCentroids(DoubleWritable distanceForCentroid) {
+		this.distanceForCentroid = distanceForCentroid;
 	}
 
 	@Override
@@ -69,11 +65,39 @@ public class PointWritable implements WritableComparable<PointWritable> {
 	}
 
 	@Override
+	public void write(DataOutput out) throws IOException {
+		x.write(out);
+		y.write(out);
+	}
+
+	@Override
 	public int compareTo(PointWritable o) {
-		if(o == null) {
-			return -1;
+		double distD = this.getDistanceForCentroid().get() - o.getDistanceForCentroid().get();
+		int distI = (int) Math.round(distD);
+
+		return distI;
+	}
+
+	@Override
+	public String toString() {
+		return x.get() + " " + y.get();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null) {
+			return false;
 		}
-		
-		return 0;
+
+		if (!(obj instanceof PointWritable)) {
+			return false;
+		}
+
+		return x.get() == ((PointWritable) obj).getX().get() && y.get() == ((PointWritable) obj).getY().get();
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(x.get(), y.get());
 	}
 }
