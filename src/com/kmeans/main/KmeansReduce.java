@@ -1,15 +1,12 @@
 package com.kmeans.main;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.hadoop.mapreduce.Reducer;
 
 import com.kmeans.distance.Distance;
@@ -24,7 +21,7 @@ public class KmeansReduce extends Reducer<PointWritable, PointWritable, PointWri
 			Reducer<PointWritable, PointWritable, PointWritable, PointWritable>.Context context)
 			throws IOException, InterruptedException {
 		System.out.println("reducer running...");
-
+		System.out.println("output map : " + key + " " + values);
 		List<PointWritable> list = new ArrayList<>();
 		for (PointWritable p : values) {
 			list.add(p);
@@ -35,35 +32,27 @@ public class KmeansReduce extends Reducer<PointWritable, PointWritable, PointWri
 
 		for (PointWritable p : list) {
 			context.write(newCenter, p);
-			
-			System.out.println("reducer : " + newCenter + " / " + p);
 		}
 
+		System.out.println("reducer close...");
 	}
 
 	@Override
 	protected void cleanup(Reducer<PointWritable, PointWritable, PointWritable, PointWritable>.Context context)
 			throws IOException, InterruptedException {
+		System.out.println("cleanup running...");
+		
 		Configuration conf = context.getConfiguration();
 		String pathCenter = conf.get("pathCenter");
-
-		FileSystem fs = FileSystem.get(conf); // delete file output when it exists
-		if (fs.exists(new Path(pathCenter))) {
-			fs.delete(new Path(pathCenter), true);
+		
+		try (PrintWriter printWriter = new PrintWriter(pathCenter)) {
+			for(PointWritable c : newListCenter) {
+				printWriter.write(c + "\n");
+				System.out.println("center : " + c);
+			}
 		}
 		
-		SequenceFile.Writer writer = null;
-		writer = SequenceFile.createWriter(conf, Writer.file(new Path(pathCenter)), Writer.keyClass(PointWritable.class),
-				Writer.valueClass(PointWritable.class));
-
-		for (PointWritable c : newListCenter) {
-			writer.append(c, new PointWritable());
-			System.out.println("center : " + c);
-		}
-
-		writer.close();
-		
-		System.out.println("END___");
+		System.out.println("cleanup close...");
 	}
 
 	/*

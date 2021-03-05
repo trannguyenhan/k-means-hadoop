@@ -6,14 +6,12 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.SequenceFile.Reader;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
 import com.kmeans.distance.Distance;
 import com.kmeans.distance.EuclideanDistance;
+import com.kmeans.points.PointService;
 import com.kmeans.points.PointWritable;
 
 public class KmeansMap extends Mapper<Object, Text, PointWritable, PointWritable> {
@@ -27,27 +25,24 @@ public class KmeansMap extends Mapper<Object, Text, PointWritable, PointWritable
 	@Override
 	protected void setup(Mapper<Object, Text, PointWritable, PointWritable>.Context context)
 			throws IOException, InterruptedException {
+		System.out.println("setup running...");
+		
 		Configuration conf = context.getConfiguration();
-		Path centers = new Path(conf.get("pathCenter"));
-
-		SequenceFile.Reader reader = null;
-		reader = new SequenceFile.Reader(conf, Reader.file(centers));
-
-		PointWritable key = new PointWritable();
-		PointWritable value = new PointWritable();
-		while (reader.next(key, value)) {
-			listCenter.add(key);
-			System.out.println(key);
-		}
-		reader.close();
+		
+		String pathCenter = conf.get("pathCenter");
+		listCenter = PointService.getListPoints(pathCenter);
 		
 		distance = new EuclideanDistance();
+		
+		System.out.println("setup close...");
 	}
 
 	@Override
 	protected void map(Object key, Text value,
 			Mapper<Object, Text, PointWritable, PointWritable>.Context context)
 			throws IOException, InterruptedException {
+		System.out.println("mapper running...");
+		
 		StringTokenizer token = new StringTokenizer(value.toString(), "\n");
 		while(token.hasMoreTokens()) {
 			String line = token.nextToken();
@@ -71,5 +66,6 @@ public class KmeansMap extends Mapper<Object, Text, PointWritable, PointWritable
 			System.out.println("mapper : " + nearest + " / " + pw);
 		}
 		
+		System.out.println("mapper close...");
 	}
 }

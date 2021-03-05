@@ -72,10 +72,9 @@ public class PointWritable implements WritableComparable<PointWritable> {
 
 	@Override
 	public int compareTo(PointWritable o) {
-		double distD = this.getDistanceForCentroid().get() - o.getDistanceForCentroid().get();
-		int distI = (int) Math.round(distD);
-
-		return distI;
+		if(this.equals(o)) return 0;
+		else if(this.x.get() + this.y.get() > o.getX().get() + o.getY().get()) return -1;
+		return 1;
 	}
 
 	@Override
