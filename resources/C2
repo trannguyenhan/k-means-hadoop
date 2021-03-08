@@ -1,0 +1,98 @@
+package weightedloadexperiment.pairstrategies;
+
+import java.util.List;
+import java.util.Random;
+
+import custom.fattree.FatTreeGraph;
+import custom.fattree.FatTreeRoutingAlgorithm;
+
+public class InterPodIncomingImprove extends InterPodIncoming{
+
+	private List<Integer> sources = getSources();
+	private List<Integer> destinations = getDestinations();
+	
+	public InterPodIncomingImprove(FatTreeRoutingAlgorithm routing, FatTreeGraph graph) {
+		super(routing, graph);
+	}
+	
+	@Override
+	public void pairHosts() {
+		Integer[] allHosts = this.getAllHosts();
+		int numOfHosts = allHosts.length;
+		
+		for(int i=0; i<numOfHosts; i++) {
+			int dst = allHosts[i];
+			destinations.add(dst);
+			
+			if(destinations.size() == 0) {
+				int src = getRandomFirstSource(dst, allHosts, numOfHosts);
+				sources.add(src);
+			} else {
+				int src = getNonFirstSource(numOfHosts, dst, allHosts);
+				sources.add(src);
+			}
+		}
+		
+		this.setSources(sources);
+		this.setDestinations(destinations);
+	}
+	
+	public int getNonFirstSource(int numOfHosts, int dst, Integer[] allHosts) {
+		int src = 0;
+		for(int i=0; i<numOfHosts; i++) {
+			src = allHosts[i];
+			boolean check = checkSrcAndDst(src, dst, allHosts, numOfHosts);
+			
+			if(check) {
+				break;
+			} else {
+				continue;
+			}
+		}
+		
+		return src;
+	}
+	
+	public boolean checkSrcAndDst(int src, int dst, Integer[] allHosts, int numOfHosts) {
+		if(checkHostInPod(dst, src)) return false;
+		if(sources.contains(src)) return false;
+		
+		int lens = sources.size();
+		if(lens <= 2) return true;
+		
+//		if(lens % 2 != 0) {
+//			int lastDst = destinations.get(lens - 2);
+//			int lastSrc = sources.get(lens - 2);
+//			int lastCoreSW = getCoreSwitch(lastSrc, lastDst);
+//			int nowCoreSW = getCoreSwitch(src, dst);
+//			
+//			if(lastCoreSW != nowCoreSW) return false;
+//		}
+		
+		return true;
+	}
+	
+	/* Choose first source with first destination
+	 * */
+	public int getRandomFirstSource(int dst, Integer[] allHosts, int numOfHosts) {
+		Random rand = new Random();
+		int index = rand.nextInt(numOfHosts);
+		
+		while(!checkHostInPod(allHosts[index], dst)) {
+			index = rand.nextInt(numOfHosts);
+		}
+		
+		return allHosts[index];
+	}
+	
+	/* Check that host number a and b are on the same pod
+	 * */
+	public boolean checkHostInPod(int a, int b) {
+		int podA = a / k;
+		int podB = b / k;
+		
+		if(podA == podB) return false;
+		return true;
+	} 
+}
+
